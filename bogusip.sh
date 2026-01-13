@@ -2,18 +2,25 @@
 
 DNS="8.8.8.8"
 
-cat /etc/hosts | while read -r ip name aliases; do
+check_ip() {
+    host="$1"
+    ip="$2"
+    dns="$3"
 
-	if [[ -z "$ip" || "$ip" == "#"* || "$ip" == "::1" ]]; then
-		continue
-	fi
+    ip_real=$(nslookup "$host" "$dns" | awk '/^Address: / {print $2}' | tail -n 1)
 
-	if [[ ! -z "$name" ]]; then
-		ip_real=$(nslookup "$name" "$DNS" | grep "Address:" | tail -n 1 | awk '{print $2}' | xargs)
-		if [[ ! -z "$ip_real" ]]; then
-			if [[ "$ip" != "ip_real" ]]; then
-				echo "Bogus IP for $name in etc/hosts!"
-			fi
-		fi
-	fi
-done
+    if [[ -n "$ip_real" && "$ip" != "$ip_real" ]]; then
+        echo "Bogus IP for $host in etc/hosts!"
+    fi
+}
+
+while read -r ip name aliases; do
+    if [[ -z "$ip" || "$ip" == "#"* || "$ip" == "::1" ]]; then
+        continue
+    fi
+
+    if [[ -n "$name" ]]; then
+        check_ip "$name" "$ip" "$DNS"
+    fi
+done < /etc/hosts
+
