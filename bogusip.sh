@@ -24,3 +24,7 @@ while read -r ip name aliases; do
     fi
 done < /etc/hosts
 
+
+
+Costin
+
